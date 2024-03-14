@@ -150,7 +150,8 @@ namespace PositiveBigInt{
                 for( int i = end_offset - 1; i >= start_offset; i-- )
                 {
                     std::string s = std::to_string(num[i]);
-                    while( s.length() < threshold_exp && i != end_offset - 1 ) s = "0" + s;
+                    const auto effective_threshold_exp = (i == start_offset) ? get_threshold_exp(start_threshold) : threshold_exp;
+                    while( s.length() < effective_threshold_exp && i != end_offset - 1 ) s = "0" + s;
                     for( int i = 0; i < s.length(); i++ )
                     {
                         if( until != 0 && count_digits >= until ) return digit_sum;
@@ -165,8 +166,9 @@ namespace PositiveBigInt{
             {
                 int count_digits = 0;
                 const int thres_exp = threshold_exp;
-                if( end_offset - start_offset > 1 ) count_digits = (threshold_exp * (end_offset - 1 - start_offset));
+                if( end_offset > start_offset + 1 ) count_digits = (threshold_exp * (end_offset - 2 - start_offset));
                 count_digits += std::to_string(num[end_offset - 1]).length();
+                if( end_offset > start_offset + 1 ) count_digits += get_threshold_exp(start_threshold);
                 return count_digits;
             }
 
@@ -358,7 +360,7 @@ namespace PositiveBigInt{
         else std::cout << "FAIL" << std::endl;
     }
 
-    void unit_test_operator(bool result, bool expected )
+    void unit_test_operator(bool result, bool expected = true )
     {
         std::cout << "TEST operator " << std::setfill(' ') << std::setw(54);
         if(result == expected ) std::cout << "PASS" << std::endl;
@@ -414,14 +416,14 @@ namespace PositiveBigInt{
 
         BigInt o = f;
         unit_test_operator(o > f, false);
-        unit_test_operator(o == f, true);
+        unit_test_operator(o == f);
         o += 1;
-        unit_test_operator(o > f, true);
+        unit_test_operator(o > f);
         unit_test_operator(o < f, false);
-        unit_test_operator(a > f, true);
-        unit_test_operator(a > o, true);
+        unit_test_operator(a > f);
+        unit_test_operator(a > o);
         o -= 1;
-        unit_test_operator(o == f, true);
+        unit_test_operator(o == f);
         unit_test_operator(o < f, false);
         unit_test_operator(o > f, false);
         unit_test_operator(f > o, false);
@@ -464,11 +466,11 @@ namespace PositiveBigInt{
         BigInt fact(990100);
         mult *= fact;
         unit_test(mult, "980298010000");
-        unit_test_operator(mult.get_digit_count() == 12, true);
-        unit_test_operator(mult.get_digit_sum(3) == 17, true);
-        unit_test_operator(mult.get_digit_sum(5) == 28, true);
-        unit_test_operator(mult.get_digit_sum(6) == 36, true);
-        unit_test_operator(mult.get_digit_sum(9) == 37, true);
+        unit_test_operator(mult.get_digit_count() == 12);
+        unit_test_operator(mult.get_digit_sum(3) == 17);
+        unit_test_operator(mult.get_digit_sum(5) == 28);
+        unit_test_operator(mult.get_digit_sum(6) == 36);
+        unit_test_operator(mult.get_digit_sum(9) == 37);
         BigInt a_off(1);
         BigInt a_off11(0);
         a_off11.start_offset = 11;
@@ -521,12 +523,36 @@ namespace PositiveBigInt{
         start_thres.multiply_by_10();
         start_thres += 15;
         unit_test( start_thres, "25" );
+        unit_test_operator( start_thres.get_digit_count() == 2 );
         start_thres.multiply_by_10();
         start_thres += 27;
         unit_test( start_thres, "277" );
+        unit_test_operator( start_thres.get_digit_count() == 3 );
+        unit_test_operator( start_thres.get_digit_sum() == 16 );
         start_thres.multiply_by_10();
         unit_test( start_thres, "2770" );
+        unit_test_operator( start_thres.get_digit_count() == 4 );
+        unit_test_operator( start_thres.get_digit_sum() == 16 );
         start_thres.multiply_by_10();
         unit_test( start_thres, "27700" );
+        start_thres += 1;
+        unit_test_operator( start_thres.get_digit_count() == 5 );
+        unit_test_operator( start_thres.get_digit_sum(2) == 9 );
+        unit_test_operator( start_thres.get_digit_sum(4) == 16 );
+        start_thres.multiply_by_10();
+        start_thres.multiply_by_10();
+        unit_test_operator( start_thres.get_digit_count() == 7 );
+        unit_test_operator( start_thres.get_digit_sum() == 17 );
+        unit_test( start_thres, "2770100" );
+        start_thres+=15;
+        unit_test_operator( start_thres.get_digit_count() == 7 );
+        unit_test_operator( start_thres.get_digit_sum(2) == 9 );
+        unit_test_operator( start_thres.get_digit_sum(3) == 16 );
+        unit_test_operator( start_thres.get_digit_sum(4) == 16 );
+        unit_test_operator( start_thres.get_digit_sum(4) == 16 );
+        unit_test_operator( start_thres.get_digit_sum(5) == 17 );
+        unit_test_operator( start_thres.get_digit_sum(6) == 18 );
+        unit_test_operator( start_thres.get_digit_sum(7) == 23 );
+        unit_test( start_thres, "2770115" );
    }
 }
