@@ -169,16 +169,12 @@ void sqrt_new(const int target, const int P)
     //std::cerr << target << " init took " << init_duration << "mus" << std::endl;
 }
 
-int main()
+unsigned long long run_variant(int N, int P)
 {
-    int N = 100;
-    int P = 10000;
-    find_squares_to_n(N);
-    find_primes_to_n();
+    solutions = {};
     unsigned long long total_sum = 0;
     for( int i = 2; i <= N; i++ )
     {
-        // break;
         if( is_perfect( i ) ) continue;
         const auto sqf = get_square_factor(i);
         if( sqf.first != -1 )
@@ -196,8 +192,26 @@ int main()
             total_sum += get_value_from_solutions(i)->get_digit_sum(P);
         }
     }
-    std::cout << total_sum << std::endl;
+    return total_sum;
+}
 
-    // unit_tests();
+void all_unit_tests()
+{
+    unit_tests();
+    unit_test_operator(run_variant(2, 100) == 475, true );
+    unit_test_operator(run_variant(10, 10000) == 315331, true );
+    unit_test_operator(run_variant(1000, 1000) == 4359087, true );
+}
+
+int main()
+{
+    int N = 10;
+    int P = 10000;
+    find_squares_to_n(1000);
+    find_primes_to_n();
+
+    // std::cout << run_variant(N, P) << std::endl;
+
+    all_unit_tests();
     return 0;
 }
