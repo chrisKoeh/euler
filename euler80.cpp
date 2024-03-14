@@ -81,7 +81,7 @@ void sqrt_new(const int target, const int P)
 
     BigInt estimate_factor(0, 10500 / start.get_threshold_exp());
     BigInt est_factor_cache(old_num,0,50);
-    BigInt estimate_factor_cmpl(0);
+    BigInt estimate_factor_cmpl(0, 10500 / start.get_threshold_exp());
     uint8_t count_zero = 0;
     int realP = start_num > 9 ? P - 2: P - 1;
     int init_duration = 0;
@@ -100,14 +100,15 @@ void sqrt_new(const int target, const int P)
         {
             target_cache.multiply_by_10();
             target_cache.multiply_by_10();
+            estimate_factor_cmpl.multiply_by_10();
             is_set = true;
         }
         else
         {
             target_cache *= 100;
+            estimate_factor_cmpl *= 10;
         }
 
-        estimate_factor_cmpl *= 10;
         estimate_factor_cmpl += (old_num*20);
 
         int estimate_num(0);

@@ -221,12 +221,14 @@ namespace PositiveBigInt{
                 {
                     start_offset--;
                     start_threshold = 10;
+                    num[start_offset] = 0;
                     return;
                 }
                 else
                 {
                     start_threshold *= 10;
                     num[start_offset] *= 10;
+                    num[start_offset] %= start_threshold;
                 }
             }
 
@@ -275,31 +277,54 @@ namespace PositiveBigInt{
                     const int b_size = bb.end_offset;
                     uint8_t keep = 0;
                     const int start_offset_diff = start_offset - bb.start_offset;
-                    const unsigned long long thres_keep_factor = (threshold / bb.start_threshold) * start_threshold;
-                    unsigned long long keep_start_thres_delay = b[bb.start_offset] / start_threshold;
-                    const unsigned long long thres_factor = (threshold / thres_keep_factor);
                     unsigned long long *ai = &a[start_offset];
-                    *ai += start_threshold - (b[bb.start_offset] % start_threshold);
-                    keep = *ai < start_threshold ? 1 : 0;
-                    *ai %= start_threshold;
-                    for( int i = bb.start_offset + 1; i < b_size; i++ )
+                    if( start_threshold <= bb.start_threshold )
                     {
-                        ai = &a[i + start_offset_diff];
-                        const unsigned long long& bi = b[i];
-                        unsigned long long effective_bi = bi % thres_keep_factor;
-                        effective_bi *= thres_factor;
-                        effective_bi += keep_start_thres_delay;
-                        keep_start_thres_delay = bi / thres_keep_factor;
-                        *ai += threshold - effective_bi - keep;
+                        const unsigned long long thres_keep_factor = (threshold / bb.start_threshold) * start_threshold;
+                        unsigned long long keep_start_thres_delay = b[bb.start_offset] / start_threshold;
+                        const unsigned long long thres_factor = (threshold / thres_keep_factor);
+                        *ai += start_threshold - (b[bb.start_offset] % start_threshold);
+                        keep = *ai < start_threshold ? 1 : 0;
+                        *ai %= start_threshold;
+                        for( int i = bb.start_offset + 1; i < b_size; i++ )
+                        {
+                            ai = &a[i + start_offset_diff];
+                            const unsigned long long& bi = b[i];
+                            unsigned long long effective_bi = bi % thres_keep_factor;
+                            effective_bi *= thres_factor;
+                            effective_bi += keep_start_thres_delay;
+                            keep_start_thres_delay = bi / thres_keep_factor;
+                            *ai += threshold - effective_bi - keep;
+                            keep = *ai < threshold ? 1 : 0;
+                            *ai %= threshold;
+                        }
+                        ai = &a[b_size + start_offset_diff];
+                        *ai += threshold;
+                        *ai -= (keep_start_thres_delay + keep);
                         keep = *ai < threshold ? 1 : 0;
                         *ai %= threshold;
+                        ai++;
                     }
-                    ai = &a[b_size + start_offset_diff];
-                    *ai += threshold;
-                    *ai -= (keep_start_thres_delay + keep);
-                    keep = *ai < threshold ? 1 : 0;
-                    *ai %= threshold;
-                    ai++;
+                    else
+                    {
+                        const unsigned long long thres_div = start_threshold / bb.start_threshold;
+                        unsigned long long effective_bi = b[bb.start_offset];
+                        const int bb_offset_diff = bb.end_offset - bb.start_offset;
+
+                        if( bb_offset_diff > 1 ) effective_bi += ((b[bb.start_offset + 1] % thres_div) * bb.start_threshold);
+                        *ai += start_threshold - effective_bi;
+                        keep = *ai < start_threshold ? 1 : 0;
+                        *ai %= start_threshold;
+                        for( int i = bb.start_offset + 1; i < b_size; i++ )
+                        {
+                            ai = &a[i + start_offset_diff];
+                            effective_bi = b[i] / thres_div;
+                            if( i < bb.end_offset - 1 ) effective_bi += ((b[i + 1] % thres_div) * (threshold / thres_div));
+                            *ai += threshold - ( effective_bi + keep);
+                            keep = *ai < threshold ? 1 : 0;
+                            *ai %= threshold;
+                        }
+                    }
                     while( keep == 1 )
                     {
                         *ai += threshold - 1;
@@ -608,5 +633,54 @@ namespace PositiveBigInt{
         subst_thres += 55;
         start_thres -= subst_thres;
         unit_test(start_thres, "52722034");
+
+        start_thres = BigInt(5645, 5);
+        start_thres.multiply_by_10();
+        start_thres.multiply_by_10();
+        start_thres.multiply_by_10();
+        unit_test(start_thres, "5645000");
+        subst_thres = BigInt(4335, 5);
+        subst_thres.multiply_by_10();
+        subst_thres.multiply_by_10();
+        start_thres -= subst_thres;
+        unit_test(start_thres, "5211500");
+        subst_thres = BigInt(511140, 5);
+        subst_thres.multiply_by_10();
+        start_thres -= subst_thres;
+        unit_test(start_thres, "100100");
+        start_thres = BigInt(5645,5);
+        start_thres.multiply_by_10();
+        start_thres.multiply_by_10();
+        start_thres += 5;
+        subst_thres = BigInt(4444, 5);
+        subst_thres.multiply_by_10();
+        subst_thres += 15;
+        unit_test(start_thres, "564505");
+        unit_test(subst_thres, "44455");
+        start_thres -= subst_thres;
+        unit_test(start_thres, "520050");
+        subst_thres *=9;
+        unit_test(subst_thres, "400095");
+        start_thres = BigInt(44445555);
+        subst_thres = BigInt(4438, 5);
+        subst_thres.multiply_by_10();
+        start_thres -= subst_thres;
+        unit_test(start_thres, "44401175");
+        subst_thres += 9;
+        subst_thres.multiply_by_10();
+        start_thres -= subst_thres;
+        unit_test(start_thres, "43957285");
+        subst_thres += 180;
+        subst_thres.multiply_by_10();
+        unit_test(subst_thres, "4440700");
+        start_thres -= subst_thres;
+        unit_test(start_thres, "39516585");
+        start_thres += BigInt((unsigned long long)10000000);
+        unit_test(start_thres, "49516585");
+        subst_thres += 25;
+        subst_thres *= 10;
+        start_thres -= subst_thres;
+        unit_test(subst_thres, "44407250");
+        unit_test(start_thres, "5109335");
    }
 }
