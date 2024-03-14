@@ -14,6 +14,8 @@ namespace PositiveBigInt{
             , digit_count(digit_count)
             , start_offset(s_offset != -1 ? s_offset : 0)
             , end_offset(start_offset)
+            , start_threshold(threshold)
+            , effective_threshold(threshold)
             {
                 while( n / threshold > 0 )
                 {
@@ -64,14 +66,18 @@ namespace PositiveBigInt{
             BigInt operator+(unsigned long long summand)
             {
                 BigInt target = *this;
+                target.effective_threshold = start_threshold;
                 unsigned long long keep = target.add_num_to_element_primitive(summand, start_offset);
                 finalize_keep(keep, start_offset+1);
+                target.effective_threshold = threshold;
                 return target;
             }
 
             void operator+=(const unsigned long long summand)
             {
+                effective_threshold = start_threshold;
                 unsigned long long keep = add_num_to_element_primitive(summand, start_offset);
+                effective_threshold = threshold;
                 finalize_keep(keep, start_offset+1);
             }
 
@@ -178,24 +184,8 @@ namespace PositiveBigInt{
                     os << num[end_offset - 1];
                 }
 
-                for( int i = end_offset - 2; i >= start_offset; i-- ) os << std::setfill('0') << std::setw(get_threshold_exp()) << num[i];
-                return os.str();
-            }
-
-            std::string get_as_string_reversed() const
-            {
-                std::stringstream os;
-                for( int i = start_offset; i < end_offset - 1; i++ )
-                {
-                    std::stringstream os_;
-                    os_ << std::setfill('0') << std::setw(get_threshold_exp()) << num[i];
-                    std::string s(os_.str());
-                    std::reverse(s.begin(), s.end());
-                    os << s;
-                }
-                auto s = std::to_string(num[end_offset - 1]);
-                std::reverse(s.begin(), s.end());
-                os << s;
+                for( int i = end_offset - 2; i >= start_offset + 1; i-- ) os << std::setfill('0') << std::setw(get_threshold_exp()) << num[i];
+                if( end_offset > start_offset + 1 ) os << std::setfill('0') << std::setw(get_threshold_exp(start_threshold)) << num[start_offset];
                 return os.str();
             }
 
@@ -203,26 +193,43 @@ namespace PositiveBigInt{
             size_t digit_count;
             int start_offset;
             int end_offset;
+            unsigned long long start_threshold;
+            unsigned long long effective_threshold;
 
-            unsigned long long get_threshold_exp() const
+            unsigned long long get_threshold_exp(const unsigned long long thres = threshold) const
+            {
+                unsigned long long threshold_exp = 1;
+                unsigned long long threshold_cache = thres;
+                while( (unsigned long long)threshold_cache / (unsigned long long)10 > 1 )
                 {
-                    unsigned long long threshold_exp = 1;
-                    unsigned long long threshold_cache = threshold;
-                    while( (unsigned long long)threshold_cache / (unsigned long long)10 > 1 )
-                    {
-                        threshold_exp++;
-                        threshold_cache /= (unsigned long long)10;
-                    }
-                    return threshold_exp;
+                    threshold_exp++;
+                    threshold_cache /= (unsigned long long)10;
                 }
+                return threshold_exp;
+            }
+
+            void multiply_by_10()
+            {
+                if( start_threshold == threshold )
+                {
+                    start_offset--;
+                    start_threshold = 10;
+                    return;
+                }
+                else
+                {
+                    start_threshold *= 10;
+                    num[start_offset] *= 10;
+                }
+            }
 
             private:
                 unsigned long long add_num_to_element_primitive(const unsigned long long& n, const int index)
                 {
                     unsigned long long& numi = num[index];
                     numi += n;
-                    const unsigned long long res = numi / threshold;
-                    numi %= threshold;
+                    const unsigned long long res = numi / effective_threshold;
+                    numi %= effective_threshold;
                     return res;
                 }
 
@@ -507,5 +514,18 @@ namespace PositiveBigInt{
             s_perf.push_back( random + 48 );
         }
         unit_test( perf, s_perf );
+
+        // start_threshold test
+        BigInt start_thres = BigInt(1, 5);
+        start_thres.multiply_by_10();
+        start_thres += 15;
+        unit_test( start_thres, "25" );
+        start_thres.multiply_by_10();
+        start_thres += 27;
+        unit_test( start_thres, "277" );
+        start_thres.multiply_by_10();
+        unit_test( start_thres, "2770" );
+        start_thres.multiply_by_10();
+        unit_test( start_thres, "27700" );
    }
 }
