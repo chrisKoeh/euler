@@ -10,7 +10,8 @@ namespace PositiveBigInt{
         static constexpr unsigned long long threshold = 1e17;
         public:
             BigInt( unsigned long long n, int s_offset = -1, unsigned long long digit_count = 11000 )
-            : num(std::vector<unsigned long long>(digit_count / get_threshold_exp()))
+            : threshold_exp(get_threshold_exp())
+            , num(std::vector<unsigned long long>(digit_count / threshold_exp))
             , digit_count(digit_count)
             , start_offset(s_offset != -1 ? s_offset : 0)
             , end_offset(start_offset)
@@ -146,11 +147,10 @@ namespace PositiveBigInt{
             {
                 int count_digits = 0;
                 int digit_sum = 0;
-                const int thres_exp = get_threshold_exp();
                 for( int i = end_offset - 1; i >= start_offset; i-- )
                 {
                     std::string s = std::to_string(num[i]);
-                    while( s.length() < thres_exp && i != end_offset - 1 ) s = "0" + s;
+                    while( s.length() < threshold_exp && i != end_offset - 1 ) s = "0" + s;
                     for( int i = 0; i < s.length(); i++ )
                     {
                         if( until != 0 && count_digits >= until ) return digit_sum;
@@ -164,8 +164,8 @@ namespace PositiveBigInt{
             int get_digit_count()
             {
                 int count_digits = 0;
-                const int thres_exp = get_threshold_exp();
-                if( end_offset - start_offset > 1 ) count_digits = (thres_exp * (end_offset - 1 - start_offset));
+                const int thres_exp = threshold_exp;
+                if( end_offset - start_offset > 1 ) count_digits = (threshold_exp * (end_offset - 1 - start_offset));
                 count_digits += std::to_string(num[end_offset - 1]).length();
                 return count_digits;
             }
@@ -184,11 +184,12 @@ namespace PositiveBigInt{
                     os << num[end_offset - 1];
                 }
 
-                for( int i = end_offset - 2; i >= start_offset + 1; i-- ) os << std::setfill('0') << std::setw(get_threshold_exp()) << num[i];
+                for( int i = end_offset - 2; i >= start_offset + 1; i-- ) os << std::setfill('0') << std::setw(threshold_exp) << num[i];
                 if( end_offset > start_offset + 1 ) os << std::setfill('0') << std::setw(get_threshold_exp(start_threshold)) << num[start_offset];
                 return os.str();
             }
 
+            unsigned long long threshold_exp;
             std::vector<unsigned long long> num;
             size_t digit_count;
             int start_offset;
