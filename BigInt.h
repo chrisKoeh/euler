@@ -275,8 +275,9 @@ namespace PositiveBigInt{
                     const int b_size = bb.end_offset;
                     uint8_t keep = 0;
                     const int start_offset_diff = start_offset - bb.start_offset;
+                    const unsigned long long thres_keep_factor = (threshold / bb.start_threshold) * start_threshold;
                     unsigned long long keep_start_thres_delay = b[bb.start_offset] / start_threshold;
-                    const unsigned long long thres_factor = (threshold / start_threshold);
+                    const unsigned long long thres_factor = (threshold / thres_keep_factor);
                     unsigned long long *ai = &a[start_offset];
                     *ai += start_threshold - (b[bb.start_offset] % start_threshold);
                     keep = *ai < start_threshold ? 1 : 0;
@@ -285,10 +286,10 @@ namespace PositiveBigInt{
                     {
                         ai = &a[i + start_offset_diff];
                         const unsigned long long& bi = b[i];
-                        unsigned long long effective_bi = bi % start_threshold;
+                        unsigned long long effective_bi = bi % thres_keep_factor;
                         effective_bi *= thres_factor;
                         effective_bi += keep_start_thres_delay;
-                        keep_start_thres_delay = bi / start_threshold;
+                        keep_start_thres_delay = bi / thres_keep_factor;
                         *ai += threshold - effective_bi - keep;
                         keep = *ai < threshold ? 1 : 0;
                         *ai %= threshold;
@@ -450,15 +451,15 @@ namespace PositiveBigInt{
         BigInt v(99901);
         u *= v;
         unit_test(u, "99810989199");
-        BigInt from(9999999);
-        BigInt split_2 = from.get_big_int_until(2);
-        unit_test(split_2, "99999");
-        BigInt split_4 = from.get_big_int_until(4);
-        unit_test(split_4, "9999999");
+        BigInt from(99999999999);
+        BigInt split_2 = from.get_big_int_until(1);
+        unit_test(split_2, "9999999");
+        BigInt split_4 = from.get_big_int_until(2);
+        unit_test(split_4, "99999999999");
         BigInt split_5 = from.get_big_int_until(5);
-        unit_test(split_5, "9999999");
+        unit_test(split_5, "99999999999");
         BigInt split_10 = from.get_big_int_until(10);
-        unit_test(split_10,"9999999");
+        unit_test(split_10,"99999999999");
 
         BigInt a1(99009900);
         BigInt a2(990099);
@@ -587,5 +588,25 @@ namespace PositiveBigInt{
         start_thres.multiply_by_10();
         start_thres *= 50;
         unit_test( start_thres, "375000");
+
+        start_thres = BigInt(564123, 5);
+        BigInt subst_thres = BigInt(3567, 5);
+        start_thres.multiply_by_10();
+        start_thres.multiply_by_10();
+        start_thres += 22;
+        unit_test( start_thres, "56412322");
+        subst_thres.multiply_by_10();
+        subst_thres.multiply_by_10();
+        subst_thres.multiply_by_10();
+        subst_thres += 833;
+        unit_test( subst_thres, "3567833");
+        start_thres -= subst_thres;
+        unit_test( start_thres, "52844489");
+        subst_thres = BigInt(1224, 5);
+        subst_thres.multiply_by_10();
+        subst_thres.multiply_by_10();
+        subst_thres += 55;
+        start_thres -= subst_thres;
+        unit_test(start_thres, "52722034");
    }
 }
