@@ -133,7 +133,11 @@ namespace PositiveBigInt{
             {
                 BigInt r(0, 0, new_digit_count);
                 int start_from = end_offset - 1 - reverse_index;
-                if( reverse_index > end_offset - 1 - start_offset ) start_from = start_offset;
+                if( reverse_index >= end_offset - 1 - start_offset )
+                {
+                    start_from = start_offset;
+                    r.start_threshold = start_threshold;
+                }
                 r.end_offset = r.start_offset;
                 for(int i = start_from; i < end_offset; i++)
                 {
@@ -524,6 +528,10 @@ namespace PositiveBigInt{
         start_thres += 15;
         unit_test( start_thres, "25" );
         unit_test_operator( start_thres.get_digit_count() == 2 );
+        BigInt new_start_thres = start_thres.get_big_int_until(1);
+        unit_test(new_start_thres, "25");
+        BigInt new_start_thres = start_thres.get_big_int_until(2);
+        unit_test(new_start_thres, "25");
         start_thres.multiply_by_10();
         start_thres += 27;
         unit_test( start_thres, "277" );
