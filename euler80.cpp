@@ -75,7 +75,7 @@ void sqrt_new(const int target, const int P)
 {
     int start_num = sqrt( target );
     BigInt start = BigInt(start_num*start_num);
-    BigInt target_cache(target);
+    BigInt target_cache(target, 21000 / start.get_threshold_exp(), 22000);
 
     int old_num = start_num;
 
@@ -85,21 +85,34 @@ void sqrt_new(const int target, const int P)
     uint8_t count_zero = 0;
     int realP = start_num > 9 ? P - 2: P - 1;
     int init_duration = 0;
+    bool is_set = false;
     for(int i = 0; i < realP; i++)
     {
+        if( target_cache.start_offset == 0 ) throw std::invalid_argument( "received negative value" );
         // slow, 40ms for P=10000, 15ms for substraction, 9ms for *100, 8ms for *10
         //auto c_start = high_resolution_clock::now();
         target_cache -= start;
-        target_cache *= 100;
         //auto c_stop = high_resolution_clock::now();
         //auto duration = duration_cast<microseconds>(c_stop - c_start);
         //init_duration += duration.count();
+        const int target_cache_size = target_cache.get_digit_count();
+        if( is_set || target_cache_size >= 100 )
+        {
+            target_cache.multiply_by_10();
+            target_cache.multiply_by_10();
+            is_set = true;
+        }
+        else
+        {
+            target_cache *= 100;
+        }
+
         estimate_factor_cmpl *= 10;
-        estimate_factor_cmpl += (int)(old_num*20);
+        estimate_factor_cmpl += (old_num*20);
 
         int estimate_num(0);
 
-        if( target_cache.get_digit_count() < 50 )
+        if( !is_set && target_cache_size < 100 )
         {
             start = ( estimate_factor_cmpl + estimate_num) * estimate_num;
             while( start < target_cache )
@@ -115,8 +128,8 @@ void sqrt_new(const int target, const int P)
         }
         else
         {
-            BigInt rough_estimate = estimate_factor_cmpl.get_big_int_until(5);
-            BigInt rough_target = target_cache.get_big_int_until(5);
+            BigInt rough_estimate = estimate_factor_cmpl.get_big_int_until(4);
+            BigInt rough_target = target_cache.get_big_int_until(4);
             const int diff_digit_count = target_cache.get_digit_count() - estimate_factor_cmpl.get_digit_count();
             int rough_diff_digit_count = rough_target.get_digit_count() - rough_estimate.get_digit_count();
             while( diff_digit_count < rough_diff_digit_count )

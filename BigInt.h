@@ -275,35 +275,35 @@ namespace PositiveBigInt{
                     const int b_size = bb.end_offset;
                     uint8_t keep = 0;
                     const int start_offset_diff = start_offset - bb.start_offset;
-                    for( int i = bb.start_offset; i < b_size; i++ )
+                    unsigned long long keep_start_thres_delay = b[bb.start_offset] / start_threshold;
+                    const unsigned long long thres_factor = (threshold / start_threshold);
+                    unsigned long long *ai = &a[start_offset];
+                    *ai += start_threshold - (b[bb.start_offset] % start_threshold);
+                    keep = *ai < start_threshold ? 1 : 0;
+                    *ai %= start_threshold;
+                    for( int i = bb.start_offset + 1; i < b_size; i++ )
                     {
-                        unsigned long long* ai = &a[i + start_offset_diff];
-                        long long c = (long long)*ai - b[i] - keep;
-                        if( c < 0 )
-                        {
-                            *ai = c + threshold;
-                            keep = 1;
-                        }
-                        else
-                        {
-                            *ai = c;
-                            keep = 0;
-                        }
+                        ai = &a[i + start_offset_diff];
+                        const unsigned long long& bi = b[i];
+                        unsigned long long effective_bi = bi % start_threshold;
+                        effective_bi *= thres_factor;
+                        effective_bi += keep_start_thres_delay;
+                        keep_start_thres_delay = bi / start_threshold;
+                        *ai += threshold - effective_bi - keep;
+                        keep = *ai < threshold ? 1 : 0;
+                        *ai %= threshold;
                     }
-                    unsigned long long * ai = &a[b_size + start_offset_diff];
+                    ai = &a[b_size + start_offset_diff];
+                    *ai += threshold;
+                    *ai -= (keep_start_thres_delay + keep);
+                    keep = *ai < threshold ? 1 : 0;
+                    *ai %= threshold;
+                    ai++;
                     while( keep == 1 )
                     {
-                        long long c = (long long)*ai - 1;
-                        if( c < 0 )
-                        {
-                            *ai = c + threshold;
-                            ai++;
-                        }
-                        else
-                        {
-                            keep = 0;
-                            *ai = c;
-                        }
+                        *ai += threshold - 1;
+                        keep = *ai < threshold ? 1 : 0;
+                        *ai %= threshold;
                     }
                     while( a[end_offset - 1] == 0 && end_offset - start_offset > 1 ) end_offset--;
                 }
@@ -530,7 +530,7 @@ namespace PositiveBigInt{
         unit_test_operator( start_thres.get_digit_count() == 2 );
         BigInt new_start_thres = start_thres.get_big_int_until(1);
         unit_test(new_start_thres, "25");
-        BigInt new_start_thres = start_thres.get_big_int_until(2);
+        new_start_thres = start_thres.get_big_int_until(2);
         unit_test(new_start_thres, "25");
         start_thres.multiply_by_10();
         start_thres += 27;
@@ -562,5 +562,20 @@ namespace PositiveBigInt{
         unit_test_operator( start_thres.get_digit_sum(6) == 18 );
         unit_test_operator( start_thres.get_digit_sum(7) == 23 );
         unit_test( start_thres, "2770115" );
+        BigInt subst(440);
+        start_thres -= subst;
+        unit_test( start_thres, "2769675");
+        start_thres.multiply_by_10();
+        unit_test( start_thres, "27696750");
+        start_thres -= BigInt(6660);
+        unit_test( start_thres, "27690090");
+        start_thres -= BigInt(690046);
+        unit_test( start_thres, "27000044");
+        start_thres -= BigInt(5000);
+        unit_test( start_thres, "26995044");
+        start_thres -= BigInt(23982437);
+        unit_test( start_thres, "3012607");
+        start_thres -= BigInt(2648003);
+        unit_test( start_thres, "364604");
    }
 }
