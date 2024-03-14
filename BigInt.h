@@ -336,9 +336,11 @@ namespace PositiveBigInt{
                     }
                     else
                     {
-                        end_offset += offset;
                         unsigned long long keep = 0;
-                        for( int i = start_offset; i < end_offset; i++ )
+                        effective_threshold = start_threshold;
+                        keep = add_num_to_element_primitive( num[start_offset]*(factor-1), start_offset);
+                        effective_threshold = threshold;
+                        for( int i = start_offset + 1; i < end_offset; i++ )
                         {
                             const unsigned long c = (num[i] * (factor - 1)) + keep;
                             keep = add_num_to_element_primitive( c, i + offset);
@@ -577,5 +579,13 @@ namespace PositiveBigInt{
         unit_test( start_thres, "3012607");
         start_thres -= BigInt(2648003);
         unit_test( start_thres, "364604");
+
+        start_thres = BigInt(25, 5);
+        start_thres.multiply_by_10();
+        start_thres *= 3;
+        unit_test( start_thres, "750");
+        start_thres.multiply_by_10();
+        start_thres *= 50;
+        unit_test( start_thres, "375000");
    }
 }
