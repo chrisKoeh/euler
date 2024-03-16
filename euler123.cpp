@@ -2,17 +2,21 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <cmath>
 #include <cassert>
+#include <chrono>
 
 #include "BigInt.h"
 
 #define PRIME_MAX 3500
 
 using namespace PositiveBigInt;
+using namespace std::chrono;
 
 constexpr unsigned long long B_EDGE = 1e12;
-constexpr unsigned long long N_MAX = 5e6;
+constexpr unsigned long long N_MAX = 1.005e6;
 std::vector<unsigned long long> primes = {2,3,5,7};
+std::array<std::pair<int, unsigned long long>, N_MAX> solutions = {};
 
 bool is_prime(unsigned long long num) {
     if(num < 2) return false;
@@ -53,16 +57,82 @@ unsigned long long power_of_n(const unsigned long long& a, const unsigned long l
 {
     if( b == 0 ) return 1;
 
+    constexpr int max_digits = 35;
+    int c = 1;
+    int total_c = 1;
+    unsigned long long res = a;
+    unsigned long long factor = a;
+    std::map<int, unsigned long long> factor_map;
+    while( total_c < b )
+    {
+        unsigned long long res_ = res * factor;
+
+        // handle overflow
+        if( res_ / factor != res )
+        {
+            BigInt b_res = BigInt(factor, 0, max_digits );
+            b_res *= BigInt(res, 0 , max_digits);
+            res = b_res.modulo(divisor);
+        }
+        else
+        {
+            res = res_ % divisor;
+        }
+
+        c *= 2;
+        if( factor_map[c] == 0 )
+        {
+            unsigned long long factor_ = factor * factor;
+
+            // handle overflow
+            if( factor_ / factor != factor )
+            {
+                BigInt b_res = BigInt(factor, 0, max_digits );
+                b_res *= b_res;
+                factor = b_res.modulo(divisor);
+            }
+            else
+            {
+                factor = factor_ % divisor;
+            }
+            factor_map[c] = factor;
+        }
+        else
+        {
+            factor = factor_map[c];
+        }
+        total_c += c/2;
+        while( c + total_c > b )
+        {
+            c /= 2;
+            factor = factor_map[c];
+            if( c == 1 )
+            {
+                factor = a;
+                break;
+            }
+        }
+    }
+    return res;
+}
+
+unsigned long long power_of_n_prim(const unsigned long long& a, const unsigned long long& b, const unsigned long long& divisor = 1e18)
+{
+    if( b == 0 ) return 1;
+
     int c = 1;
     int total_c = 1;
     unsigned long long res = a;
     unsigned long long factor = a;
     while( total_c < b )
     {
+        unsigned long long res_ = res * factor;
         res *= factor;
         res %= divisor;
-        // std::cout << total_c<< " - " << c << " - " << factor << " = " << res << std::endl;
+
         c *= 2;
+        unsigned long long factor_ = factor * factor;
+
         factor *= factor;
         factor %= divisor;
         total_c += c/2;
@@ -70,6 +140,7 @@ unsigned long long power_of_n(const unsigned long long& a, const unsigned long l
         {
             c = 1;
             factor = a;
+            //factor %= divisor;
         }
     }
     return res;
@@ -84,6 +155,20 @@ unsigned long long calc_remainder( int n )
 
     unsigned long long prime_plus_res = power_of_n( prime_plus, n, divisor );
     unsigned long long prime_minus_res = power_of_n( prime_minus, n, divisor );
+
+    unsigned long long res = ((prime_plus_res % divisor) + (prime_minus_res % divisor )) % divisor;
+    return res;
+}
+
+unsigned long long calc_remainder_prim( int n )
+{
+    const unsigned long long prime = primes[ n-1 ];
+    const unsigned long long divisor = prime * prime;
+    const unsigned long long prime_plus = prime + 1;
+    const unsigned long long prime_minus = prime - 1;
+
+    unsigned long long prime_plus_res = power_of_n_prim( prime_plus, n, divisor );
+    unsigned long long prime_minus_res = power_of_n_prim( prime_minus, n, divisor );
 
     std::cout << prime_plus_res << "+" << prime_minus_res << "%" << divisor;
     unsigned long long res = ((prime_plus_res % divisor) + (prime_minus_res % divisor )) % divisor;
@@ -114,16 +199,31 @@ int main()
 {
     find_primes_to_n();
     std::cout << primes.size() << " found" << std::endl;
-    for( int n = 1; n <= 200000; n+=2 )
+    for( int n = 1; n <= 80000; n+=2 )
     {
-        // std::cout << primes[n-1] << "(" << n <<"): ";
-        // calc_remainder_primitive(n);
-        if( calc_remainder(n) >= B_EDGE)
+        unsigned long long res = calc_remainder(n);
+        // std::cout << n << ": " << res << std::endl;
+        solutions[ primes[n-1] ] = std::make_pair(n, res);
+
+        if( res >= B_EDGE)
         {
             std::cout << "broken at " << n << ":" << primes[n - 1] << std::endl;
             break;
         }
     }
-    // unit_power_tests();
+
+    for(int j = 0; j < 100000; j++)
+    {
+        unsigned long long N = 1e12;
+        for(int i = sqrt(N); i < N_MAX; i++)
+        {
+            if( solutions[i].second > N )
+            {
+                // std::cout << "found solution at " << i << ": " << solutions[i].second << " started at " << sqrt(N) << "(" << solutions[i].first << ")" << std::endl;
+                break;
+            }
+        }
+    }
+
     return 0;
 }

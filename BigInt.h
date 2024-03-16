@@ -7,7 +7,7 @@
 namespace PositiveBigInt{
     class BigInt
     {
-        static constexpr unsigned long long threshold = 1e17;
+        static constexpr unsigned long long threshold = 1e8;
         public:
             BigInt( unsigned long long n, int s_offset = -1, unsigned long long digit_count = 11000 )
             : threshold_exp(get_threshold_exp())
@@ -377,7 +377,7 @@ namespace PositiveBigInt{
 
                     if( offset != 0 )
                     {
-                        BigInt cache(0);
+                        BigInt cache(0, this->start_offset, this->digit_count);
                         cache.end_offset = offset + end_offset;
                         cache.start_offset = start_offset;
                         unsigned long long keep = 0;
@@ -397,7 +397,7 @@ namespace PositiveBigInt{
                         effective_threshold = threshold;
                         for( int i = start_offset + 1; i < end_offset; i++ )
                         {
-                            const unsigned long c = (num[i] * (factor - 1)) + keep;
+                            const unsigned long long c = (num[i] * (factor - 1)) + keep;
                             keep = add_num_to_element_primitive( c, i + offset);
                         }
                         finalize_keep( keep, end_offset);
@@ -731,5 +731,10 @@ namespace PositiveBigInt{
         BigInt fac(12);
         fac *= fac;
         unit_test(fac, "144");
+        BigInt f_(100021313);
+        f_ *= 1.5e12;
+        unit_test( f_, "15003196950000000000" );
+        f_ *= 1.5e12;
+        unit_test( f_, "2250479542500000000000000000000000");
    }
 }
