@@ -43,13 +43,14 @@ namespace PositiveBigInt{
             void operator*=(const BigInt& factor)
             {
                 BigInt original = *this;
-                *this = BigInt(0);
+                BigInt _this = BigInt(0, original.start_offset, original.digit_count);
                 for( int i = factor.start_offset; i < factor.end_offset; i++ )
                 {
                     BigInt cache = original;
                     cache.multiply_factor(factor.num[i], i - factor.start_offset);
-                    *this += cache;
+                    _this += cache;
                 }
+                *this = _this;
             }
 
             void operator*=(unsigned long long factor)
@@ -145,6 +146,34 @@ namespace PositiveBigInt{
                     r.end_offset++;
                 }
                 return r;
+            }
+
+            unsigned long long modulo(unsigned long long m)
+            {
+                unsigned long long res = 0;
+                res += num[start_offset] % m;
+                unsigned long long total_thres = threshold % m;
+                for( int i = start_offset + 1; i < end_offset; i++  )
+                {
+                    res += ((num[i] % m )*total_thres) % m;
+                    res %= m;
+                    total_thres *= (threshold%m);
+                    total_thres %= m;
+                }
+                return res;
+            }
+
+            unsigned long long to_ull()
+            {
+                if( (end_offset - start_offset)*threshold_exp > 20 ) std::cout << "warning, unsigned long long might be too small" << std::endl;
+                unsigned long long res = num[start_offset];
+                unsigned long long thres_total = threshold;
+                for( int i = start_offset + 1; i < end_offset; i++ )
+                {
+                    res += (thres_total*num[i]);
+                    thres_total *= threshold;
+                }
+                return res;
             }
 
             int get_digit_sum(int until = 0)
@@ -682,5 +711,25 @@ namespace PositiveBigInt{
         start_thres -= subst_thres;
         unit_test(subst_thres, "44407250");
         unit_test(start_thres, "5109335");
+
+        BigInt mod_(1111234);
+        unit_test_operator( mod_.modulo(3) == 1 );
+        unit_test_operator( mod_.modulo(17) == 12 );
+        unit_test_operator( mod_.modulo(5) == 4 );
+        unit_test_operator( mod_.modulo(1124) == 722 );
+        unit_test_operator( mod_.modulo(10233) == 6070 );
+        unit_test_operator( mod_.to_ull() == 1111234 );
+
+        mod_ = BigInt(5891201239012398);
+        unit_test_operator( mod_.modulo(3) == 0 );
+        unit_test_operator( mod_.modulo(17) == 8 );
+        unit_test_operator( mod_.modulo(5) == 3 );
+        unit_test_operator( mod_.modulo(1124) == 262 );
+        unit_test_operator( mod_.modulo(10233) == 477 );
+        unit_test_operator( mod_.to_ull() == 5891201239012398 );
+
+        BigInt fac(12);
+        fac *= fac;
+        unit_test(fac, "144");
    }
 }
