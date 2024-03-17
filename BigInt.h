@@ -7,7 +7,7 @@
 namespace PositiveBigInt{
     class BigInt
     {
-        static constexpr unsigned long long threshold = 1e8;
+        static constexpr unsigned long long threshold = 1e6;
         public:
             BigInt( unsigned long long n, int s_offset = -1, unsigned long long digit_count = 11000 )
             : threshold_exp(get_threshold_exp())
@@ -152,11 +152,15 @@ namespace PositiveBigInt{
             {
                 unsigned long long res = 0;
                 res += num[start_offset] % m;
+                res %= m;
+                // std::cout << res << std::endl;
                 unsigned long long total_thres = threshold % m;
                 for( int i = start_offset + 1; i < end_offset; i++  )
                 {
+                    // std::cout << total_thres << "*" << num[i] << std::endl;
                     res += ((num[i] % m )*total_thres) % m;
                     res %= m;
+                    // std::cout << res << std::endl;
                     total_thres *= (threshold%m);
                     total_thres %= m;
                 }
