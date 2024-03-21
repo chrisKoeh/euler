@@ -43,9 +43,9 @@ void get_squares( const int N )
     // num_digits.resize(offset);
 
     std::sort(num_digits.begin(), num_digits.begin() + offset);
-    std::vector<unsigned long> solutions;
+    int solutions_count = 0;
     std::string last;
-    std::vector<unsigned long> max_solutions;
+    int max_solutions_count = 0;
     unsigned long current_max_value = 0;
     unsigned long total_max_value = 0;
     for( int i = 0; i < offset; i++ )
@@ -53,17 +53,17 @@ void get_squares( const int N )
         const auto& nd = num_digits[i];
         if( nd.first == last )
         {
-            solutions.push_back( nd.second );
+            solutions_count++;
             if( nd.second > current_max_value ) current_max_value = nd.second;
         }
         else
         {
-            if( solutions.size() > max_solutions.size() )
+            if( solutions_count > max_solutions_count )
             {
                 total_max_value = current_max_value;
-                max_solutions = solutions;
+                max_solutions_count = solutions_count;
             }
-            solutions.clear();
+            solutions_count = 0;
             current_max_value = nd.second;
             last = nd.first;
         }
